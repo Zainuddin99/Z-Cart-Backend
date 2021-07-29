@@ -1,8 +1,10 @@
 const { createCustomErrorInstance } = require("../Error handlers/customErrorHandler")
 const Users = require('../Database/Models/all-users')
 const { asyncWrapper } = require("../Error handlers/asyncWrapper")
+require('dotenv').config()
 
 const bcrypt = require('bcrypt')
+const jwt = require('jsonwebtoken')
 
 const addUsers = asyncWrapper(async(req, res, next) =>{
     const {firstName, lastName, eMail, password, confirmPassword} = req.body
@@ -39,7 +41,15 @@ const signInUsers = asyncWrapper(async(req, res, next)=>{
                 return next()
             }
             if(result){
-                return res.status(201).json({message: "Logged in successfully"})
+                const token = jwt.sign({
+                    eMail: user.eMail,
+                    fullName: user.firstName+' '+user.lastName,
+                    id:user._id
+                }, process.env.SECRET_KEY,
+                {
+                    expiresIn: '1h'
+                })
+                return res.status(201).json({message: "Logged in successfully", userToken: token})
             }
             return next(createCustomErrorInstance('Invalid password', 401))
         })
@@ -48,4 +58,14 @@ const signInUsers = asyncWrapper(async(req, res, next)=>{
     }
 })
 
-module.exports = {addUsers, signInUsers}
+const verifyLoggedUser = (req, res) =>{
+    const {token} = req.body
+    try{
+        const decode = jwt.verify(token, process.env.SECRET_KEY)
+        res.status(200).json(decode)
+    }catch(err){
+        createCustomErrorInstance('Session expired', 403)
+    }
+}
+
+module.exports = {addUsers, signInUsers, verifyLoggedUser}
