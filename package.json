@@ -4,7 +4,10 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-    "start": "node app.js"
+    "start": "node app.js",
+    "client": "cd ../Frontend && npm start",
+    "nodemon": "nodemon app.js",
+    "dev": "concurrently \"npm nodemon\" \"npm run client\""
   },
   "keywords": [],
   "author": "",
@@ -14,6 +17,7 @@
   },
   "dependencies": {
     "bcrypt": "^5.0.1",
+    "concurrently": "^6.2.0",
     "cors": "^2.8.5",
     "dotenv": "^10.0.0",
     "express": "^4.17.1",

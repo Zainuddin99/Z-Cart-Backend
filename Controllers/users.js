@@ -31,28 +31,42 @@ const addUsers = asyncWrapper(async(req, res, next) =>{
 
 
 const signInUsers = asyncWrapper(async(req, res, next)=>{
-    const {eMail, password} = req.body
+    const {eMail, password, googleSign} = req.body
 
-    const user = await Users.findOne({eMail})
+    if(googleSign){
+        const {email:eMail, givenName:firstName, familyName:lastName} = googleSign
+        const alreadyAdded = await Users.findOne({eMail})
+        if(!alreadyAdded){
+            await Users.create({eMail, firstName, lastName})
+        }
+    }
+    
+    const user = await Users.findOne({eMail: eMail || googleSign.email})
 
     if(user){
+        if(!googleSign){
         bcrypt.compare(password, user.password, (err, result)=>{
             if(err){
-                return next()
+                return next(createCustomErrorInstance('Try with google sign in for this email', 400))
             }
-            if(result){
-                const token = jwt.sign({
+            if(!result){
+                return next(createCustomErrorInstance('Invalid password', 401))
+            }
+            const token = jwt.sign({
                     eMail: user.eMail,
                     fullName: user.firstName+' '+user.lastName,
                     id:user._id
-                }, process.env.SECRET_KEY,
-                {
-                    expiresIn: '1h'
-                })
+                }, process.env.SECRET_KEY)
+                return res.status(201).json({message: "Logged in successfully", userToken: token})
+        })
+    }else{
+        const token = jwt.sign({
+                    eMail: user.eMail,
+                    fullName: user.firstName+' '+user.lastName,
+                    id:user._id
+                }, process.env.SECRET_KEY)
                 return res.status(201).json({message: "Logged in successfully", userToken: token})
             }
-            return next(createCustomErrorInstance('Invalid password', 401))
-        })
     }else{
     next(createCustomErrorInstance('No user found', 404))
     }

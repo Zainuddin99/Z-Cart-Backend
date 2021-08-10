@@ -7,13 +7,15 @@ require('dotenv').config()
 
 //Routers
 const users = require('./Routers/users')
+const cartRouter = require('./Routers/carts')
 
 //Middlewares
-app.use(express.json())
 app.use(cors())
+app.use(express.json())
 
 //Routes
 app.use('/users', users)
+app.use('/carts', cartRouter)
 
 //Error handler middleware
 app.use(defaultErrorHandler)
