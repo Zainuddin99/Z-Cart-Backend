@@ -5,9 +5,15 @@ require('dotenv').config()
 
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
+const { sendMail } = require("../nodemailer")
 
 const addUsers = asyncWrapper(async(req, res, next) =>{
+
     const {firstName, lastName, eMail, password, confirmPassword} = req.body
+
+    if(!firstName || !lastName || !eMail || !password || !confirmPassword){
+        return next(createCustomErrorInstance('All fields are required!', 403))
+    }
 
     if(password !== confirmPassword){
         return next(createCustomErrorInstance('Password don\'t match', 422))
@@ -24,7 +30,17 @@ const addUsers = asyncWrapper(async(req, res, next) =>{
             return next()
         }
         const user = await Users.create({firstName, lastName, eMail, password: result})
-        res.status(201).json({message: 'User created'})
+
+        sendMail(`${firstName} ${lastName}`, eMail )
+        .then((result)=>{
+            if(result){
+
+            res.status(201).json({message: 'User created and mail sent to you'})
+
+            }else{
+                res.status(201).json({message: 'User created but we could not send mail to you!'})
+            }
+        })
     })
 
 })
