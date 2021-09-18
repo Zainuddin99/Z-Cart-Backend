@@ -8,11 +8,11 @@ const jwt = require('jsonwebtoken')
 const { sendMail } = require("../nodemailer")
 
 const addUsers = asyncWrapper(async(req, res, next) =>{
-
+    
     const {firstName, lastName, eMail, password, confirmPassword} = req.body
 
     if(!firstName || !lastName || !eMail || !password || !confirmPassword){
-        return next(createCustomErrorInstance('All fields are required!', 403))
+        return next(createCustomErrorInstance('All fields are required!', 400))
     }
 
     if(password !== confirmPassword){
@@ -22,7 +22,7 @@ const addUsers = asyncWrapper(async(req, res, next) =>{
     const isExistingUser = await Users.findOne({eMail})
     
     if(isExistingUser){
-        return next(createCustomErrorInstance('User with this email already exists', 401))
+        return next(createCustomErrorInstance('User with this email already exists', 400))
     }
 
     bcrypt.hash(password, 12, async(err, result)=>{
